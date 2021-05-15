@@ -95,6 +95,7 @@ def match(threshold, truths, priors, variances, labels, loc_t, conf_t, idx):
     best_prior_overlap, best_prior_idx = overlaps.max(1, keepdim=True)
     # [1,num_priors] best ground truth for each prior
     best_truth_overlap, best_truth_idx = overlaps.max(0, keepdim=True)
+    #import pdb;pdb.set_trace()
     best_truth_idx.squeeze_(0)
     best_truth_overlap.squeeze_(0)
     best_prior_idx.squeeze_(1)
@@ -110,7 +111,7 @@ def match(threshold, truths, priors, variances, labels, loc_t, conf_t, idx):
     loc = encode(matches, priors, variances)
     loc_t[idx] = loc    # [num_priors,4] encoded offsets to learn
     conf_t[idx] = conf  # [num_priors] top class label for each prior
-
+    #print(loc.min(),loc.max())
 
 def encode(matched, priors, variances):
     """Encode the variances from the priorbox layers into the ground truth boxes
@@ -131,7 +132,14 @@ def encode(matched, priors, variances):
     g_cxcy /= (variances[0] * priors[:, 2:])
     # match wh / prior wh
     g_wh = (matched[:, 2:] - matched[:, :2]) / priors[:, 2:]
+    #print('gwh_befor',g_wh,variances[1])
     g_wh = torch.log(g_wh) / variances[1]
+    if torch.any(torch.isnan(g_wh)):
+        import pdb;pdb.set_trace()
+    #if not g_wh<10000:
+    #    import pdb;pdb.set_trace()
+    #print('gwh',g_wh)
+    #print('gxy',g_cxcy)
     # return target for smooth_l1_loss
     return torch.cat([g_cxcy, g_wh], 1)  # [num_priors,4]
 
@@ -166,6 +174,7 @@ def log_sum_exp(x):
         x (Variable(tensor)): conf_preds from conf layers
     """
     x_max = x.data.max()
+    #import pdb;pdb.set_trace()
     return torch.log(torch.sum(torch.exp(x-x_max), 1, keepdim=True)) + x_max
 
 
@@ -213,17 +222,32 @@ def nms(boxes, scores, overlap=0.5, top_k=200):
             break
         idx = idx[:-1]  # remove kept element from view
         # load bboxes of next highest vals
-        torch.index_select(x1, 0, idx, out=xx1)
-        torch.index_select(y1, 0, idx, out=yy1)
-        torch.index_select(x2, 0, idx, out=xx2)
-        torch.index_select(y2, 0, idx, out=yy2)
+        #import pdb;pdb.set_trace()
+        try:
+            torch.index_select(x1, 0, idx, out=xx1)
+            torch.index_select(y1, 0, idx, out=yy1)
+            torch.index_select(x2, 0, idx, out=xx2)
+            torch.index_select(y2, 0, idx, out=yy2)
+
+            xx1 = torch.clamp(xx1, min=x1[i])
+            yy1 = torch.clamp(yy1, min=y1[i])
+            xx2 = torch.clamp(xx2, max=x2[i])
+            yy2 = torch.clamp(yy2, max=y2[i])
+        #diffrent version of pytorch
+        except:
+            xx1=torch.index_select(x1, 0, idx)
+            yy1=torch.index_select(y1, 0, idx)
+            xx2=torch.index_select(x2, 0, idx)
+            yy2=torch.index_select(y2, 0, idx)
+
+            xx1 = torch.clamp(xx1, min=x1[i].cpu().data)
+            yy1 = torch.clamp(yy1, min=y1[i].cpu().data)
+            xx2 = torch.clamp(xx2, max=x2[i].cpu().data)
+            yy2 = torch.clamp(yy2, max=y2[i].cpu().data)
         # store element-wise max with next highest score
-        xx1 = torch.clamp(xx1, min=x1[i])
-        yy1 = torch.clamp(yy1, min=y1[i])
-        xx2 = torch.clamp(xx2, max=x2[i])
-        yy2 = torch.clamp(yy2, max=y2[i])
-        w.resize_as_(xx2)
-        h.resize_as_(yy2)
+        #import pdb;pdb.set_trace()
+        #w.resize_as_(xx2)
+        #h.resize_as_(yy2)
         w = xx2 - xx1
         h = yy2 - yy1
         # check sizes of xx1 and xx2.. after each iteration

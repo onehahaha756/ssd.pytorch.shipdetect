@@ -17,18 +17,14 @@ if sys.version_info[0] == 2:
 else:
     import xml.etree.ElementTree as ET
 
-VOC_CLASSES = (  # always index 0
-    'aeroplane', 'bicycle', 'bird', 'boat',
-    'bottle', 'bus', 'car', 'cat', 'chair',
-    'cow', 'diningtable', 'dog', 'horse',
-    'motorbike', 'person', 'pottedplant',
-    'sheep', 'sofa', 'train', 'tvmonitor')
+SSDD_CLASSES = (["ship"])
 
 # note: if you used our download scripts, this should be right
-VOC_ROOT = osp.join(HOME, "sar_ssd/ssd.pytorch/data/VOCdevkit/")
+SSDD_ROOT = osp.join(HOME, "SSDD/")
 
+#import pdb;pdb.set_trace()
 
-class VOCAnnotationTransform(object):
+class SSDDAnnotationTransform(object):
     """Transforms a VOC annotation into a Tensor of bbox coords and label index
     Initilized with a dictionary lookup of classnames to indexes
 
@@ -43,7 +39,7 @@ class VOCAnnotationTransform(object):
 
     def __init__(self, class_to_ind=None, keep_difficult=False):
         self.class_to_ind = class_to_ind or dict(
-            zip(VOC_CLASSES, range(len(VOC_CLASSES))))
+            zip(SSDD_CLASSES, range(len(SSDD_CLASSES))))
         self.keep_difficult = keep_difficult
 
     def __call__(self, target, width, height):
@@ -55,6 +51,7 @@ class VOCAnnotationTransform(object):
             a list containing lists of bounding boxes  [bbox coords, class name]
         """
         res = []
+        #import pdb;pdb.set_trace()
         for obj in target.iter('object'):
             difficult = int(obj.find('difficult').text) == 1
             if not self.keep_difficult and difficult:
@@ -69,6 +66,8 @@ class VOCAnnotationTransform(object):
                 # scale height or width
                 cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
                 bndbox.append(cur_pt)
+            #import pdb;pdb.set_trace()
+            #print(self.class_to_ind)
             label_idx = self.class_to_ind[name]
             bndbox.append(label_idx)
             res += [bndbox]  # [xmin, ymin, xmax, ymax, label_ind]
@@ -77,7 +76,7 @@ class VOCAnnotationTransform(object):
         return res  # [[xmin, ymin, xmax, ymax, label_ind], ... ]
 
 
-class VOCDetection(data.Dataset):
+class SSDDDetection(data.Dataset):
     """VOC Detection Dataset Object
 
     input is image, target is annotation
@@ -95,22 +94,24 @@ class VOCDetection(data.Dataset):
     """
 
     def __init__(self, root,
-                 image_sets=[('2007', 'trainval')],
-                 transform=None, target_transform=VOCAnnotationTransform(),
-                 dataset_name='VOC0712'):
+                 image_sets=['SSDD'],split='train',
+                 transform=None, target_transform=SSDDAnnotationTransform(),
+                 dataset_name='SSDD'):
         self.root = root
         self.image_set = image_sets
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = osp.join('%s', 'Annotations', '%s.xml')
+        self._annopath = osp.join('%s', 'newAnnotations', '%s.xml')
         self._imgpath = osp.join('%s', 'JPEGImages', '%s.jpg')
         self.ids = list()
-        for (year, name) in image_sets:
-            rootpath = osp.join(self.root, 'VOC' + year)
-            for line in open(osp.join(rootpath, 'ImageSets', 'Main', name + '.txt')):
-                self.ids.append((rootpath, line.strip()))
-
+        rootpath = self.root
+        #import pdb;pdb.set_trace()
+        for line in open(osp.join(rootpath,'Main','{}.txt'.format(split))):
+                #import pdb;pdb.set_trace()
+                ssdd_img_id=line.strip()
+                self.ids.append((rootpath,ssdd_img_id))
+        
     def __getitem__(self, index):
         im, gt, h, w = self.pull_item(index)
 
@@ -124,6 +125,7 @@ class VOCDetection(data.Dataset):
 
         target = ET.parse(self._annopath % img_id).getroot()
         img = cv2.imread(self._imgpath % img_id)
+        #print(self._imgpath % img_id)
         height, width, channels = img.shape
 
         if self.target_transform is not None:

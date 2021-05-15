@@ -397,16 +397,16 @@ class PhotometricDistort(object):
         return self.rand_light_noise(im, boxes, labels)
 
 
-class SSDAugmentation(object):
-    def __init__(self, size=300, mean=(104, 117, 123)):
+class GFPlaneAugmentation(object):
+    def __init__(self, size=512, mean=(104, 117, 123)):
         self.mean = mean
         self.size = size
         self.augment = Compose([
             ConvertFromInts(),
             ToAbsoluteCoords(),
             PhotometricDistort(),
-            Expand(self.mean),
-            RandomSampleCrop(),
+            #Expand(self.mean),
+            #RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),

@@ -15,7 +15,7 @@ class L2Norm(nn.Module):
 
     def reset_parameters(self):
         init.constant_(self.weight,self.gamma)
-
+    #@staticmethod
     def forward(self, x):
         norm = x.pow(2).sum(dim=1, keepdim=True).sqrt()+self.eps
         #x /= norm

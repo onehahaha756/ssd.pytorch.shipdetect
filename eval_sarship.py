@@ -17,7 +17,7 @@ from data import SSDDDetection, SSDDAnnotationTransform, SSDD_ROOT,BaseTransform
 import torch.utils.data as data
 
 from ssd import build_ssd
-from utils.augmentations import GFPlaneAugmentation as SSDAugmentation
+from utils.augmentations import SSDAugmentation
 
 import sys
 import os
@@ -40,11 +40,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Evaluation')
 parser.add_argument('--trained_model',
-                    default='weights/ssd500_GFPlane_7900.pth', type=str,
+                    default='weights/ssd300_COCO_11000_dict.pth', type=str,
                     help='Trained state_dict file path to open')
-parser.add_argument('--save_folder', default='GFplane_results/', type=str,
+parser.add_argument('--save_folder', default='eval/', type=str,
                     help='File path to save results')
-parser.add_argument('--confidence_threshold', default=0.01, type=float,
+parser.add_argument('--confidence_threshold', default=0.3, type=float,
                     help='Detection confidence threshold')
 parser.add_argument('--top_k', default=5, type=int,
                     help='Further restrict the number of predictions to parse')
@@ -70,12 +70,11 @@ if torch.cuda.is_available():
 else:
     torch.set_default_tensor_type('torch.FloatTensor')
 
-annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
-imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
-imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets',
-                          'Main', '{:s}.txt')
-YEAR = '2007'
-devkit_path = args.voc_root + 'VOC' + YEAR
+annopath = os.path.join(args.voc_root, 'newAnnotations', '%s.xml')
+imgpath = os.path.join(args.voc_root, 'JPEGImages', '%s.jpg')
+imgsetpath = os.path.join(args.voc_root, 'Main', '{:s}.txt')
+#YEAR = '2007'
+devkit_path = args.voc_root + 'SSDD_result'
 dataset_mean = (104, 117, 123)
 set_type = 'test'
 
@@ -152,6 +151,7 @@ def write_voc_results_file(all_boxes, dataset):
         filename = get_voc_results_file_template(set_type, cls)
         with open(filename, 'wt') as f:
             for im_ind, index in enumerate(dataset.ids):
+                #import pdb;pdb.set_trace()
                 dets = all_boxes[cls_ind+1][im_ind]
                 if dets == []:
                     continue
@@ -317,7 +317,9 @@ cachedir: Directory for caching the annotations
         tp = np.zeros(nd)
         fp = np.zeros(nd)
         for d in range(nd):
+            #import pdb;pdb.set_trace()
             R = class_recs[image_ids[d]]
+            #import pdb;pdb.set_trace()
             bb = BB[d, :].astype(float)
             ovmax = -np.inf
             BBGT = R['bbox'].astype(float)
@@ -367,6 +369,7 @@ cachedir: Directory for caching the annotations
 def test_net(save_folder, net, cuda, dataset, transform, top_k,
              im_size=300, thresh=0.05):
     num_images = len(dataset)
+    #import pdb;pdb.set_trace()
     # all detections are collected into:
     #    all_boxes[cls][image] = N x 5 array of detections in
     #    (x1, y1, x2, y2, score)
@@ -380,7 +383,8 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
     for i in range(num_images):
         im, gt, h, w = dataset.pull_item(i)
-
+        h,w=300,300
+        
         x = Variable(im.unsqueeze(0))
         if args.cuda:
             x = x.cuda()
@@ -389,6 +393,14 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
         detect_time = _t['im_detect'].toc(average=False)
 
         # skip j = 0, because it's the background class
+        #import pdb;pdb.set_trace()
+        img=im
+        img[0]=img[0]-img[0].min()
+        img[1]=img[1]-img[1].min()
+        img[2]=img[2]-img[2].min()
+        img=img.numpy().transpose((1,2,0))
+        img=img.copy()
+
         for j in range(1, detections.size(1)):
             dets = detections[0, j, :]
             mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
@@ -400,14 +412,20 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
             boxes[:, 2] *= w
             boxes[:, 1] *= h
             boxes[:, 3] *= h
+            #import pdb;pdb.set_trace()
             scores = dets[:, 0].cpu().numpy()
             cls_dets = np.hstack((boxes.cpu().numpy(),
                                   scores[:, np.newaxis])).astype(np.float32,
                                                                  copy=False)
             all_boxes[j][i] = cls_dets
+            #import pdb;pdb.set_trace()
+            for i in range(cls_dets.shape[0]):
+                if cls_dets[i][-1]>thresh:
+                    cv2.rectangle(img,(int(cls_dets[i][0]),int(cls_dets[i][1])),(int(cls_dets[i][2]),int(cls_dets[i][3])),(0,255,0),2,2)
 
         print('im_detect: {:d}/{:d} {:.3f}s'.format(i + 1,
-                                                    num_images, detect_time))
+                                                   num_images, detect_time))
+        cv2.imwrite('vis_results/{}.jpg'.format(i),img) 
 
     with open(det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -426,6 +444,7 @@ if __name__ == '__main__':
     num_classes = len(labelmap) + 1                      # +1 for background
     net = build_ssd('test', 300, num_classes)            # initialize SSD
     net.load_state_dict(torch.load(args.trained_model))
+    #net.load_state_dict(args.trained_model)
     net.eval()
     print('Finished loading model!')
     # load data
@@ -433,11 +452,7 @@ if __name__ == '__main__':
     #                        BaseTransform(300, dataset_mean),
     #                        VOCAnnotationTransform())
     #SSDD dataset
-    # dataset = SSDDDetection(root=SSDD_ROOT,
-    #                            transform=SSDAugmentation(300,
-    #                                                      MEANS))
-    #GFPlane
-    dataset = GFPlaneDetection(root=GFPlane_ROOT,
+    dataset = SSDDDetection(root=SSDD_ROOT,split='test',
                                transform=SSDAugmentation(300,
                                                          MEANS))
 

@@ -36,15 +36,15 @@ else:
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Evaluation')
 parser.add_argument('--trained_model',
-                    default='weights/ssd500_GFPlane_7900.pth', type=str,
+                    default='weights/ssd500_Ship_21000.pth', type=str,
                     help='Trained state_dict file path to open')
-parser.add_argument('--save_folder', default='GFplane_results/', type=str,
+parser.add_argument('--save_folder', default='Ship_results/', type=str,
                     help='File path to save results')
-parser.add_argument('--confidence_threshold', default=0.01, type=float,
+parser.add_argument('--confidence_threshold', default=0.5, type=float,
                     help='Detection confidence threshold')
 parser.add_argument('--top_k', default=5, type=int,
                     help='Further restrict the number of predictions to parse')
@@ -380,14 +380,21 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
     for i in range(num_images):
         im, gt, h, w = dataset.pull_item(i)
-
+        h,w=300,300
         x = Variable(im.unsqueeze(0))
         if args.cuda:
             x = x.cuda()
         _t['im_detect'].tic()
+        import pdb;pdb.set_trace()
         detections = net(x).data
         detect_time = _t['im_detect'].toc(average=False)
 
+        img=im
+        img[0]=img[0]-img[0].min()
+        img[1]=img[1]-img[1].min()
+        img[2]=img[2]-img[2].min()
+        img=img.numpy().transpose((1,2,0))
+        img=img.copy()
         # skip j = 0, because it's the background class
         for j in range(1, detections.size(1)):
             dets = detections[0, j, :]
@@ -405,10 +412,13 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
                                   scores[:, np.newaxis])).astype(np.float32,
                                                                  copy=False)
             all_boxes[j][i] = cls_dets
+            for i in range(cls_dets.shape[0]):
+                if cls_dets[i][-1]>thresh:
+                    cv2.rectangle(img,(int(cls_dets[i][0]),int(cls_dets[i][1])),(int(cls_dets[i][2]),int(cls_dets[i][3])),(0,255,0),2,2)
 
         print('im_detect: {:d}/{:d} {:.3f}s'.format(i + 1,
                                                     num_images, detect_time))
-
+        cv2.imwrite('GFplane_results/{}.jpg'.format(i),img) 
     with open(det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 

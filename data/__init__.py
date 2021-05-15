@@ -1,7 +1,11 @@
-from .voc0712 import VOCDetection, VOCAnnotationTransform, VOC_CLASSES, VOC_ROOT
+#from .voc0712 import VOCDetection, VOCAnnotationTransform, VOC_CLASSES, VOC_ROOT
 
-from .coco import COCODetection, COCOAnnotationTransform, COCO_CLASSES, COCO_ROOT, get_label_map
+#from .coco import COCODetection, COCOAnnotationTransform, COCO_CLASSES, COCO_ROOT, get_label_map
 from .config import *
+from .sar_ship import SSDDDetection, SSDDAnnotationTransform, SSDD_CLASSES, SSDD_ROOT
+from .voc0712 import VOCDetection, VOCAnnotationTransform, VOC_CLASSES, VOC_ROOT
+from .Gfplane import GFPlaneDetection,GFPlaneAnnotationTransform,GFPlane_ROOT,GFPlane_CLASSES
+from .Ship import ShipDetection,ShipAnnotationTransform,Ship_ROOT,Ship_CLASSES
 import torch
 import cv2
 import numpy as np

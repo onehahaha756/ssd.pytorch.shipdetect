@@ -5,6 +5,16 @@ __pycache__/
 
 # C extensions
 *.so
+#results
+*.jpg
+*.pkl
+MixShip/
+Ship/
+CutShip/
+vis_convs/
+vis_results/
+demo/
+
 
 # Distribution / packaging
 .Python

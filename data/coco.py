@@ -163,7 +163,11 @@ class COCODetection(data.Dataset):
             index (int): index of img to get annotation of
         Return:
             list:  [img_id, [(label, bbox coords),...]]
-                eg: ('001718', [('dog', (96, 13, 438, 332))])
+                eg: ('001718', [('dog', (96, 13, 438, 332))]
+r
+r
+pg
+r
         '''
         img_id = self.ids[index]
         ann_ids = self.coco.getAnnIds(imgIds=img_id)

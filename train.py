@@ -1,5 +1,5 @@
 from data import *
-from utils.augmentations import SSDAugmentation
+from utils.augmentations import GFPlaneAugmentation
 from layers.modules import MultiBoxLoss
 from ssd import build_ssd
 import os
@@ -23,23 +23,23 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
-parser.add_argument('--dataset', default='VOC', choices=['VOC', 'COCO'],
+parser.add_argument('--dataset', default='CasiaShip', choices=['CasiaShip','GFPlane','VOC', 'COCO','SSDD'],
                     type=str, help='VOC or COCO')
-parser.add_argument('--dataset_root', default=VOC_ROOT,
+parser.add_argument('--dataset_root', default=Ship_ROOT,
                     help='Dataset root directory path')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth',
                     help='Pretrained base model')
-parser.add_argument('--batch_size', default=32, type=int,
+parser.add_argument('--batch_size', default=16, type=int,
                     help='Batch size for training')
-parser.add_argument('--resume', default=None, type=str,
+parser.add_argument('--resume', type=str,
                     help='Checkpoint state_dict file to resume training from')
-parser.add_argument('--start_iter', default=0, type=int,
+parser.add_argument('--start_iter', default=7600, type=int,
                     help='Resume training at this iter')
-parser.add_argument('--num_workers', default=4, type=int,
+parser.add_argument('--num_workers', default=0, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
@@ -52,6 +52,7 @@ parser.add_argument('--visdom', default=False, type=str2bool,
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
 args = parser.parse_args()
+
 
 
 if torch.cuda.is_available():
@@ -69,6 +70,7 @@ if not os.path.exists(args.save_folder):
 
 
 def train():
+    #os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     if args.dataset == 'COCO':
         if args.dataset_root == VOC_ROOT:
             if not os.path.exists(COCO_ROOT):
@@ -81,18 +83,36 @@ def train():
                                 transform=SSDAugmentation(cfg['min_dim'],
                                                           MEANS))
     elif args.dataset == 'VOC':
-        if args.dataset_root == COCO_ROOT:
-            parser.error('Must specify dataset if specifying dataset_root')
+        #if args.dataset_root == VOC_ROOT:
+        #    parser.error('Must specify dataset if specifying dataset_root')
         cfg = voc
         dataset = VOCDetection(root=args.dataset_root,
                                transform=SSDAugmentation(cfg['min_dim'],
                                                          MEANS))
-
+    elif args.dataset == 'SSDD':
+        print('root is SSDD')
+        cfg = ssdd
+        dataset = SSDDDetection(root=args.dataset_root,split='train',
+                               transform=SSDAugmentation(cfg['min_dim'],
+                                                         MEANS))
+    elif args.dataset == 'GFPlane':
+        print('root is GFPlane')
+        cfg = gfplane
+        dataset = GFPlaneDetection(root=args.dataset_root,split='train',
+                               transform=GFPlaneAugmentation(cfg['min_dim'],
+                                                         MEANS))
+    elif args.dataset == 'CasiaShip':
+        print('root is CasiaShip')
+        cfg=casiaship
+        dataset = ShipDetection(root=args.dataset_root,split='train',
+                               transform=GFPlaneAugmentation(cfg['min_dim'],
+                                                         MEANS))
     if args.visdom:
         import visdom
         viz = visdom.Visdom()
 
-    ssd_net = build_ssd('train', cfg['min_dim'], cfg['num_classes'])
+    ssd_net = build_ssd('train',cfg, cfg['min_dim'], cfg['num_classes'])
+    #import pdb;pdb.set_trace()
     net = ssd_net
 
     if args.cuda:
@@ -104,12 +124,13 @@ def train():
         ssd_net.load_weights(args.resume)
     else:
         vgg_weights = torch.load(args.save_folder + args.basenet)
+        #import pdb;pdb.set_trace()
         print('Loading base network...')
         ssd_net.vgg.load_state_dict(vgg_weights)
 
     if args.cuda:
         net = net.cuda()
-
+    #import pdb;pdb.set_trace()
     if not args.resume:
         print('Initializing weights...')
         # initialize newly added layers' weights with xavier method
@@ -148,6 +169,7 @@ def train():
                                   pin_memory=True)
     # create batch iterator
     batch_iterator = iter(data_loader)
+    epoch=0
     for iteration in range(args.start_iter, cfg['max_iter']):
         if args.visdom and iteration != 0 and (iteration % epoch_size == 0):
             update_vis_plot(epoch, loc_loss, conf_loss, epoch_plot, None,
@@ -162,8 +184,16 @@ def train():
             adjust_learning_rate(optimizer, args.gamma, step_index)
 
         # load train data
-        images, targets = next(batch_iterator)
+        try:
+            images, targets = next(batch_iterator)
+        except StopIteration:
+            print('next batch')
+            batch_iterator = iter(data_loader)
+            images, targets = next(batch_iterator)
+            epoch=epoch+1
+            print('\nepoch: {} ,dataset trained finished!'.format(epoch))
 
+        
         if args.cuda:
             images = Variable(images.cuda())
             targets = [Variable(ann.cuda(), volatile=True) for ann in targets]
@@ -175,25 +205,30 @@ def train():
         out = net(images)
         # backprop
         optimizer.zero_grad()
+        #import pdb;pdb.set_trace()
         loss_l, loss_c = criterion(out, targets)
+        #import pdb;pdb.set_trace()
         loss = loss_l + loss_c
+        #print('')
         loss.backward()
         optimizer.step()
         t1 = time.time()
-        loc_loss += loss_l.data[0]
-        conf_loss += loss_c.data[0]
-
-        if iteration % 10 == 0:
+        loc_loss += loss_l.item()
+        conf_loss += loss_c.item()
+        #print('iter ' + repr(iteration) + ' || Loss: %.4f ||' %(loss.item())+\
+        #    ' || Loss_l: %.4f' %(loss_l.item())+' || Loss_c: %.4f'%(loss_c.item()))
+        if iteration % 1 == 0:
             print('timer: %.4f sec.' % (t1 - t0))
-            print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.data[0]), end=' ')
+            print('epoch: %d || '%(epoch),' iter ' + repr(iteration) + ' || Loss: %.4f ||' %(loss.item())+\
+            ' || Loss_l: %.4f' %(loss_l.item())+' || Loss_c: %.4f'%(loss_c.item()), end=' ')
 
         if args.visdom:
             update_vis_plot(iteration, loss_l.data[0], loss_c.data[0],
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 5000 == 0:
+        if iteration != 0 and iteration % 2000 == 0:
             print('Saving state, iter:', iteration)
-            torch.save(ssd_net.state_dict(), 'weights/ssd300_COCO_' +
+            torch.save(ssd_net.state_dict(), 'weights/ssd512_MixShip512_100' +
                        repr(iteration) + '.pth')
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')
@@ -249,6 +284,7 @@ def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
             win=window2,
             update=True
         )
+
 
 
 if __name__ == '__main__':

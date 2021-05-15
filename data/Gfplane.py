@@ -17,18 +17,14 @@ if sys.version_info[0] == 2:
 else:
     import xml.etree.ElementTree as ET
 
-VOC_CLASSES = (  # always index 0
-    'aeroplane', 'bicycle', 'bird', 'boat',
-    'bottle', 'bus', 'car', 'cat', 'chair',
-    'cow', 'diningtable', 'dog', 'horse',
-    'motorbike', 'person', 'pottedplant',
-    'sheep', 'sofa', 'train', 'tvmonitor')
+GFPlane_CLASSES = (["0"])
 
 # note: if you used our download scripts, this should be right
-VOC_ROOT = osp.join(HOME, "sar_ssd/ssd.pytorch/data/VOCdevkit/")
+GFPlane_ROOT = '/data/03_Datasets/CutShip'
 
+#import pdb;pdb.set_trace()
 
-class VOCAnnotationTransform(object):
+class GFPlaneAnnotationTransform(object):
     """Transforms a VOC annotation into a Tensor of bbox coords and label index
     Initilized with a dictionary lookup of classnames to indexes
 
@@ -43,7 +39,7 @@ class VOCAnnotationTransform(object):
 
     def __init__(self, class_to_ind=None, keep_difficult=False):
         self.class_to_ind = class_to_ind or dict(
-            zip(VOC_CLASSES, range(len(VOC_CLASSES))))
+            zip(GFPlane_CLASSES, range(len(GFPlane_CLASSES))))
         self.keep_difficult = keep_difficult
 
     def __call__(self, target, width, height):
@@ -55,29 +51,25 @@ class VOCAnnotationTransform(object):
             a list containing lists of bounding boxes  [bbox coords, class name]
         """
         res = []
-        for obj in target.iter('object'):
-            difficult = int(obj.find('difficult').text) == 1
-            if not self.keep_difficult and difficult:
-                continue
-            name = obj.find('name').text.lower().strip()
-            bbox = obj.find('bndbox')
+        #import pdb;pdb.set_trace()
+        for obj in target.readlines():
+            obj=obj.strip().split(' ')
+            difficult = 0
 
-            pts = ['xmin', 'ymin', 'xmax', 'ymax']
-            bndbox = []
-            for i, pt in enumerate(pts):
-                cur_pt = int(bbox.find(pt).text) - 1
-                # scale height or width
-                cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
-                bndbox.append(cur_pt)
+            name = obj[-1]
+
+            bndbox = [int(obj[0])/width,int(obj[1])/height,int(obj[2])/width,int(obj[3])/height]
+            if bndbox[0]>bndbox[2]:
+                bndbox = [int(obj[2])/width,int(obj[3])/height,int(obj[0])/width,int(obj[1])/height]
             label_idx = self.class_to_ind[name]
             bndbox.append(label_idx)
             res += [bndbox]  # [xmin, ymin, xmax, ymax, label_ind]
             # img_id = target.find('filename').text[:-4]
-
+        #import pdb;pdb.set_trace()
         return res  # [[xmin, ymin, xmax, ymax, label_ind], ... ]
 
 
-class VOCDetection(data.Dataset):
+class GFPlaneDetection(data.Dataset):
     """VOC Detection Dataset Object
 
     input is image, target is annotation
@@ -95,22 +87,26 @@ class VOCDetection(data.Dataset):
     """
 
     def __init__(self, root,
-                 image_sets=[('2007', 'trainval')],
-                 transform=None, target_transform=VOCAnnotationTransform(),
-                 dataset_name='VOC0712'):
+                 image_sets=['GFPlane'],split='train',
+                 transform=None, target_transform=GFPlaneAnnotationTransform(),
+                 dataset_name='GFPlane'):
         self.root = root
         self.image_set = image_sets
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = osp.join('%s', 'Annotations', '%s.xml')
-        self._imgpath = osp.join('%s', 'JPEGImages', '%s.jpg')
+        self._annopath = osp.join('%s','labels', '%s.txt')
+        self._imgpath = osp.join('%s', 'images','%s.jpg')
         self.ids = list()
-        for (year, name) in image_sets:
-            rootpath = osp.join(self.root, 'VOC' + year)
-            for line in open(osp.join(rootpath, 'ImageSets', 'Main', name + '.txt')):
-                self.ids.append((rootpath, line.strip()))
-
+        rootpath = self.root
+        self.image_indexes=[]
+        #import pdb;pdb.set_trace()
+        for line in open(osp.join(rootpath,'{}.txt'.format(split))):
+                #import pdb;pdb.set_trace()
+                gfplane_id=line.strip()
+                self.ids.append((rootpath,gfplane_id))
+                self.image_indexes.append(gfplane_id)
+        
     def __getitem__(self, index):
         im, gt, h, w = self.pull_item(index)
 
@@ -122,8 +118,9 @@ class VOCDetection(data.Dataset):
     def pull_item(self, index):
         img_id = self.ids[index]
 
-        target = ET.parse(self._annopath % img_id).getroot()
+        target = open(self._annopath % img_id)
         img = cv2.imread(self._imgpath % img_id)
+        #print(self._imgpath % img_id)
         height, width, channels = img.shape
 
         if self.target_transform is not None:
