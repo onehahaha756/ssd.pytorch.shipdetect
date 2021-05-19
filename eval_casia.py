@@ -178,6 +178,7 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
     GtNmus=0
     for imagename in imagenames:
         if not imagename in gt_dict.keys():
+            gt_dict[imagename]=[]
             continue
         gts=gt_dict[imagename]
         cls_bboxes=[]
@@ -237,6 +238,10 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
             imgname=imageids[d]
             #import pdb;pdb.set_trace()
             cls_gtbboxs=cls_gt[imgname]
+            #image has no object, so the bbox is false positive
+            if len(cls_gtbboxs)==0:
+                fp[d]=1
+                continue
             #import pdb;pdb.set_trace()
 
             BBGT=np.array([bbox[0] for bbox in cls_gtbboxs])
