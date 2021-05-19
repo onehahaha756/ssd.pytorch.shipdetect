@@ -6,6 +6,7 @@ from .sar_ship import SSDDDetection, SSDDAnnotationTransform, SSDD_CLASSES, SSDD
 from .voc0712 import VOCDetection, VOCAnnotationTransform, VOC_CLASSES, VOC_ROOT
 from .Gfplane import GFPlaneDetection,GFPlaneAnnotationTransform,GFPlane_ROOT,GFPlane_CLASSES
 from .Ship import ShipDetection,ShipAnnotationTransform,Ship_ROOT,Ship_CLASSES
+from .Bigship import BigShipDetection,BigShip_ROOT
 import torch
 import cv2
 import numpy as np

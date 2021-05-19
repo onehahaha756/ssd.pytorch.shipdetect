@@ -24,7 +24,9 @@ import warnings
 from tqdm import tqdm
 import os.path as osp
 from eval_casia import casia_eval
-
+from nms import nms
+import matplotlib.pyplot as plt
+import time
 warnings.filterwarnings("ignore")
 
 if sys.version_info[0] == 2:
@@ -36,6 +38,30 @@ else:
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
+
+class Timer(object):
+    """A simple timer."""
+    def __init__(self):
+        self.total_time = 0.
+        self.calls = 0
+        self.start_time = 0.
+        self.diff = 0.
+        self.average_time = 0.
+
+    def tic(self):
+        # using time.time instead of time.clock because time time.clock
+        # does not normalize for multithreading
+        self.start_time = time.time()
+
+    def toc(self, average=True):
+        self.diff = time.time() - self.start_time
+        self.total_time += self.diff
+        self.calls += 1
+        self.average_time = self.total_time / self.calls
+        if average:
+            return self.average_time
+        else:
+            return self.diff
 
 def draw_clsdet(img,cls_dets,vis_thresh):
     '''
@@ -51,16 +77,22 @@ def draw_clsdet(img,cls_dets,vis_thresh):
         label=cls_dets[i][-1]
         if score>vis_thresh:
             cv2.rectangle(img,(x1,y1),(x2,y2),(0,255,0),2,2)
-            cv2.putText(img,str(label),(x1,y1),2,cv2.FONT_HERSHEY_PLAIN,(0,255,0),3)
+            cv2.putText(img,str(score)[:5],(x1,y1),2,cv2.FONT_HERSHEY_PLAIN,(0,255,0),3)
     #return show_img
 
-def infer_bigpic(det_file,vis_dir, net, imglist,im_size=300,overlap=300, thresh=0.05,save_results=True):
+def infer_bigpic(det_file,vis_dir, net, imglist,transform,im_size,nms_thre,overlap=300,thresh=0.05,save_results=True):
 
     det_results={}
     w,h=im_size,im_size
+
+    print('inferenceing...')
     for imgpath in tqdm(imglist):
         big_im=cv2.imread(imgpath)
-        H,W,C=big_im.shape
+        try:
+            H,W,C=big_im.shape
+        except:
+            print('{} is not exsits'.format(imgpath))
+            continue
         rows,cols=(H-overlap)//(h-overlap),(W-overlap)//(w-overlap)
 
         step_h,step_w=(h-overlap),(w-overlap)
@@ -68,16 +100,17 @@ def infer_bigpic(det_file,vis_dir, net, imglist,im_size=300,overlap=300, thresh=
         basename=os.path.splitext(os.path.basename(imgpath))[0]
 
         all_boxes=[]
-
+        imginfer_time=Timer()
+        imginfer_time.tic()
         for i in range(rows):
             for j in range(cols):
                 im=big_im[i*step_h:i*step_h+h,j*step_w:j*step_w+w,:]
                 img=im.copy()
-                img=img.transpose(2,0,1)
-                img=torch.from_numpy(img).float()
+                #img=img.transpose(2,0,1)
+                img=torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
+                # import pdb;pdb.set_trace()
                 x = Variable(img.unsqueeze(0))
-                if args.cuda:
-                    x = x.cuda()
+                x = x.cuda()
                 
                 detections = net(x).data
                 '''
@@ -105,18 +138,27 @@ def infer_bigpic(det_file,vis_dir, net, imglist,im_size=300,overlap=300, thresh=
                     cls_label=no_bg_cls*np.ones(boxes.size(0))
 
                     scores = dets[:, 0].cpu().numpy()
+                    #import pdb;pdb.set_trace()
                     #concat results
                     cls_dets = np.hstack((boxes.cpu().numpy(),
                                         scores[:, np.newaxis],cls_label[:,np.newaxis])).astype(np.float32,
                                                                        copy=False)
+                    
                     #save results
+                    #print('detect subpatch {}/{}'.format(i*cols+j,cols*rows))
                     for num in range(cls_dets.shape[0]):
                         all_boxes.append(cls_dets[num].tolist())
-        det_results[basename]=all_boxes
+                        #print('detect ship {}, confidence {}\n'.format(cls_dets[num][:-2],nms_bboxes[num][-2]))
+        print('detect {} object '.format(len(all_boxes)))
+        nms_time=Timer()
+        nms_time.tic()
+        nms_bboxes=nms(all_boxes,nms_thre,thresh)
+        print('nms {} bboxes,use {}s'.format(len(all_boxes)-len(nms_bboxes),nms_time.toc()))
+        det_results[basename]=nms_bboxes
         if save_results:
-            draw_clsdet(big_im,all_boxes,thresh)
+            draw_clsdet(big_im,nms_bboxes,thresh)
             cv2.imwrite('{}/{}.jpg'.format(vis_dir,basename),big_im) 
-
+        print('image detect time :{}'.format(imginfer_time.toc()))
     with open(det_file, 'wb') as f:
         pickle.dump(det_results, f, pickle.HIGHEST_PROTOCOL)
 
@@ -145,17 +187,23 @@ def mksavetree(save_dir):
 
     return det_path,imagenames,vis_dir
 
-def eval_results(annot_dir,annot_type,det_path,imagesetfile,clss,overthre,conf_thre):
+def eval_results(annot_dir,annot_type,det_path,imagesetfile,clss,overthre,conf_thre,nms_thre):
 
-    rec,prec,ap=casia_eval(annot_dir,annot_type,det_path,imagesetfile,clss,overthre,conf_thre)
+    rec,prec,ap=casia_eval(annot_dir,annot_type,det_path,imagesetfile,clss,overthre,conf_thre,nms_thre)
 
     det_dir=osp.dirname(det_path)
     results_path=osp.join(det_dir,'results.txt')
+    save_ap_fig=osp.join(det_dir,'AP.png')
+    plt.plot(rec,prec)
+    plt.xlabel('recall');plt.ylabel('presicion')
+    plt.savefig(save_ap_fig)
+
     with open(results_path,'w',encoding='utf-8') as f:
         f.write('weights path :{}\n'.format(args.trained_model))
-        f.write('iou overthre:{}\nConfidence thre:{}\nAP:{}\nMaxRecall:{} \nMinPrecision: {}\n'\
-                 .format(overthre,conf_thre,ap,rec[-1],prec[-1]))
+        f.write('iou overthre:{}\nConfidence thre:{}\nnms thresh:{}\nAP:{}\nMaxRecall:{} \nMinPrecision: {}\n'\
+                .format(overthre,conf_thre,nms_thre,ap,rec[-1],prec[-1]))
     f.close()
+
 
 
 def get_infer_imagelist(imagedir,test_txt=None,imgtype='.jpg'):
@@ -163,6 +211,7 @@ def get_infer_imagelist(imagedir,test_txt=None,imgtype='.jpg'):
     return whole image list or subimage list from test_txt
     '''
     imglist=[]
+    #import pdb;pdb.set_trace()
     if test_txt!=None:
         with open(test_txt,'r') as f:
             for imagename in f.readlines():
@@ -175,7 +224,7 @@ def get_infer_imagelist(imagedir,test_txt=None,imgtype='.jpg'):
     return imglist
 if __name__ == '__main__':
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     parser = argparse.ArgumentParser(
         description='Single Shot MultiBox Detector Evaluation')
     parser.add_argument('--trained_model',
@@ -193,6 +242,8 @@ if __name__ == '__main__':
                         help='Detection confidence threshold')
     parser.add_argument('--iou_thre', default=0.3, type=float,
                         help='evalution iou thre ')
+    parser.add_argument('--nms_thre', default=0.5, type=float,
+                        help='nms iou thre ')
     parser.add_argument('--cuda', default=True, type=str2bool,
                         help='Use cuda to train model')
     parser.add_argument('--re_evaluate', default=False, type=str2bool,
@@ -226,13 +277,14 @@ if __name__ == '__main__':
     annotdir=os.path.join(args.data_dir,'labelDota')
 
     imglist=get_infer_imagelist(imagedir,args.test_images)
-
+    #import pdb;pdb.set_trace()
     #genarate savefolder
     det_path,imagenames,vis_dir=mksavetree(args.save_folder)
     #write test imglist
+    transform=BaseTransform(cfg['min_dim'],MEANS)
     write_infer_imagenames(imglist,imagenames)
     if not args.re_evaluate:
         #shutil.rmtree(args.save_folder)
-        infer_bigpic(det_path, vis_dir,net, imglist,cfg['min_dim'],thresh=args.conf_thre)
+        infer_bigpic(det_path, vis_dir,net, imglist,transform,cfg['min_dim'],args.nms_thre,thresh=args.conf_thre)
     
-    eval_results(annotdir,args.annot_type,det_path,imagenames,cfg['classname'],args.iou_thre,args.conf_thre)
+    eval_results(annotdir,args.annot_type,det_path,imagenames,cfg['classname'],args.iou_thre,args.conf_thre,args.nms_thre)

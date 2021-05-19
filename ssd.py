@@ -142,9 +142,6 @@ class SSD(nn.Module):
         conf = list()
         #vis feature maps
         vis=list()
-        #print(x.size())
-        # apply vgg up to conv4_3 relu
-        #vis.append(x)
         for k in range(23):
             x = self.vgg[k](x)
 
@@ -224,6 +221,7 @@ def vgg(cfg, i, batch_norm=False):
             else:
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
+    
     pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
     conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
     conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
@@ -273,14 +271,19 @@ base = {
             512, 512, 512],
     '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M',
             512, 512, 512],
+    '4096': [64,64,'M',128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M',
+            512, 512, 512]
 }
 extras = {
     '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
     '512': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+    '4096': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
 }
 mbox = {
     '300': [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
     '512': [4, 6, 6, 6, 4, 4],
+    '4096': [4, 6, 6, 6, 4, 4],
+    
 }
 
 
@@ -288,7 +291,8 @@ def build_ssd(phase,cfg,size=300, num_classes=21):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
-    if (size != 300 and size!=512):
+    if (str(size) not in base.keys()):
+        
         print("ERROR: You specified size " + repr(size) + ". However, " +
               "currently only SSD300 (size=300) is supported!")
         return

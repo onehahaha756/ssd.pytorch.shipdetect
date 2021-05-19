@@ -1,0 +1,279 @@
+***************
+weights path :weights/ssd512_CutShip512_30040000.pth
+loss :0.06633952260017395
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.3401679841897233
+MaxRecall:0.3813559322033898 
+MinPrecision: 0.5555555555555556
+
+***************
+weights path :weights/ssd512_CutShip512_30042000.pth
+loss :0.029018782079219818
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.33719008264462813
+MaxRecall:0.3644067796610169 
+MinPrecision: 0.5308641975308642
+
+***************
+weights path :weights/ssd512_CutShip512_30044000.pth
+loss :0.05046379938721657
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.33743315508021393
+MaxRecall:0.3644067796610169 
+MinPrecision: 0.5375
+
+***************
+weights path :weights/ssd512_CutShip512_30046000.pth
+loss :0.025552241131663322
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.3390860476421974
+MaxRecall:0.3644067796610169 
+MinPrecision: 0.5308641975308642
+
+***************
+weights path :weights/ssd512_CutShip512_300_8000.pth
+loss :4.103903293609619
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.000839480330386641
+MaxRecall:0.4594594594594595 
+MinPrecision: 4.76996158777992e-05
+
+***************
+weights path :weights/ssd512_CutShip512_300_8000.pth
+loss :5.308103561401367
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.09119972099511742
+MaxRecall:0.13934426229508196 
+MinPrecision: 0.0026113671274961598
+
+***************
+weights path :weights/ssd512_CutShip512_300_10000.pth
+loss :4.084823131561279
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.320996971442007
+MaxRecall:0.7704918032786885 
+MinPrecision: 0.02037719488402341
+
+***************
+weights path :weights/ssd512_CutShip512_300_12000.pth
+loss :1.8277559280395508
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.47133361383132516
+MaxRecall:0.6311475409836066 
+MinPrecision: 0.2037037037037037
+
+***************
+weights path :weights/ssd512_CutShip512_300_14000.pth
+loss :0.8279812335968018
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4180192763211631
+MaxRecall:0.5 
+MinPrecision: 0.24696356275303644
+
+***************
+weights path :weights/ssd512_CutShip512_300_16000.pth
+loss :0.6918644905090332
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4108431520198873
+MaxRecall:0.5081967213114754 
+MinPrecision: 0.37349397590361444
+
+***************
+weights path :weights/ssd512_CutShip512_300_18000.pth
+loss :0.42909348011016846
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.3922077922077923
+MaxRecall:0.48360655737704916 
+MinPrecision: 0.44360902255639095
+
+***************
+weights path :weights/ssd512_CutShip512_300_20000.pth
+loss :0.1351778656244278
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4669366347937776
+MaxRecall:0.5163934426229508 
+MinPrecision: 0.48091603053435117
+
+***************
+weights path :weights/ssd512_CutShip512_300_22000.pth
+loss :0.44535285234451294
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4604584502630381
+MaxRecall:0.5 
+MinPrecision: 0.5545454545454546
+
+***************
+weights path :weights/ssd512_CutShip512_300_24000.pth
+loss :0.14234967529773712
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4996671606923057
+MaxRecall:0.5 
+MinPrecision: 0.48031496062992124
+
+***************
+weights path :weights/ssd512_CutShip512_300_26000.pth
+loss :0.11553720384836197
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4789667392695148
+MaxRecall:0.5 
+MinPrecision: 0.5169491525423728
+
+***************
+weights path :weights/ssd512_CutShip512_300_28000.pth
+loss :0.24345265328884125
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4167446865522185
+MaxRecall:0.48360655737704916 
+MinPrecision: 0.5130434782608696
+
+***************
+weights path :weights/ssd512_CutShip512_300_30000.pth
+loss :0.023912182077765465
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.40047702965483717
+MaxRecall:0.4918032786885246 
+MinPrecision: 0.49586776859504134
+
+***************
+weights path :weights/ssd512_CutShip512_300_32000.pth
+loss :0.10008852183818817
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4817432448901797
+MaxRecall:0.5 
+MinPrecision: 0.5258620689655172
+
+***************
+weights path :weights/ssd512_CutShip512_300_34000.pth
+loss :0.057176899164915085
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4148366784730422
+MaxRecall:0.4918032786885246 
+MinPrecision: 0.5309734513274337
+
+***************
+weights path :weights/ssd512_CutShip512_300_36000.pth
+loss :0.04341895133256912
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4809142669462827
+MaxRecall:0.5 
+MinPrecision: 0.6161616161616161
+
+***************
+weights path :weights/ssd512_CutShip512_300_38000.pth
+loss :0.055993951857089996
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.46960806490790385
+MaxRecall:0.5 
+MinPrecision: 0.5700934579439252
+
+***************
+weights path :weights/ssd512_CutShip512_300_40000.pth
+loss :0.654356062412262
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4836937683711068
+MaxRecall:0.5081967213114754 
+MinPrecision: 0.5904761904761905
+
+***************
+weights path :weights/ssd512_CutShip512_300_42000.pth
+loss :0.020376242697238922
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4893231797666714
+MaxRecall:0.5163934426229508 
+MinPrecision: 0.6
+
+***************
+weights path :weights/ssd512_CutShip512_300_44000.pth
+loss :0.050637081265449524
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.486572556811585
+MaxRecall:0.5081967213114754 
+MinPrecision: 0.5904761904761905
+
+***************
+weights path :weights/ssd512_CutShip512_300_46000.pth
+loss :0.0034165498800575733
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4840919387474527
+MaxRecall:0.5081967213114754 
+MinPrecision: 0.6019417475728155
+
+***************
+weights path :weights/ssd512_CutShip512_300_48000.pth
+loss :0.010696175508201122
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4847399108967078
+MaxRecall:0.5081967213114754 
+MinPrecision: 0.5961538461538461
+
+***************
+weights path :weights/ssd512_CutShip512_300_50000.pth
+loss :0.014497136697173119
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.4788464505365265
+MaxRecall:0.5 
+MinPrecision: 0.5865384615384616
+
+***************
+weights path :weights/ssd512_CutShip512_300_52000.pth
+loss :0.006332993041723967
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.47791780928530464
+MaxRecall:0.5 
+MinPrecision: 0.5922330097087378
+
+***************
+weights path :weights/ssd512_CutShip512_300_54000.pth
+loss :0.018579650670289993
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.47675409844417443
+MaxRecall:0.5 
+MinPrecision: 0.5922330097087378
+
+***************
+weights path :weights/ssd512_CutShip512_300_56000.pth
+loss :0.01185042317956686
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.47791780928530464
+MaxRecall:0.5 
+MinPrecision: 0.5922330097087378
+
+***************
+weights path :weights/ssd512_CutShip512_300_58000.pth
+loss :0.00813342072069645
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.47791780928530464
+MaxRecall:0.5 
+MinPrecision: 0.5922330097087378
+

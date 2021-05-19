@@ -6,9 +6,8 @@ https://github.com/fmassa/vision/blob/voc_dataset/torchvision/datasets/voc.py
 Updated by: Ellis Brown, Max deGroot
 """
 from .config import HOME
-from .config import MEANS
 import os.path as osp
-import sys,os
+import sys
 import torch
 import torch.utils.data as data
 import cv2
@@ -21,24 +20,9 @@ else:
 Ship_CLASSES = (["ship"])
 
 # note: if you used our download scripts, this should be right
-Ship_ROOT = '/data/03_Datasets/CasiaDatasets/CutMixShip512_300_noobj'
+BigShip_ROOT = '/data/03_Datasets/CasiaDatasets/ship'
 
 #import pdb;pdb.set_trace()
-
-def base_transform(image, size, mean):
-    x = cv2.resize(image, (size, size)).astype(np.float32)
-    x -= mean
-    x = x.astype(np.float32)
-    return x
-
-
-class BaseTransform:
-    def __init__(self, size, mean):
-        self.size = size
-        self.mean = np.array(mean, dtype=np.float32)
-
-    def __call__(self, image, boxes=None, labels=None):
-        return base_transform(image, self.size, self.mean), boxes, labels
 
 class ShipAnnotationTransform(object):
     """Transforms a VOC annotation into a Tensor of bbox coords and label index
@@ -85,7 +69,7 @@ class ShipAnnotationTransform(object):
         return res  # [[xmin, ymin, xmax, ymax, label_ind], ... ]
 
 
-class ShipDetection(data.Dataset):
+class BigShipDetection(data.Dataset):
     """VOC Detection Dataset Object
 
     input is image, target is annotation
@@ -109,11 +93,10 @@ class ShipDetection(data.Dataset):
         self.root = root
         self.image_set = image_sets
         self.transform = transform
-        self.basetransform=BaseTransform(512,MEANS)
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = osp.join('%s','labelDota', '%s.txt')
-        self._imgpath = osp.join('%s', 'image',split,'%s.jpg')
+        self._annopath = osp.join('%s','labelRect', '%s.txt')
+        self._imgpath = osp.join('%s', 'image','%s.jpg')
         self.ids = list()
         rootpath = self.root
         self.image_indexes=[]
@@ -134,11 +117,9 @@ class ShipDetection(data.Dataset):
 
     def pull_item(self, index):
         img_id = self.ids[index]
-        if not os.path.exists(self._annopath % img_id):
-            return self.pull_noobj_item(index)
+
         target = open(self._annopath % img_id)
         img = cv2.imread(self._imgpath % img_id)
-
         #print(self._imgpath % img_id)
         height, width, channels = img.shape
 
@@ -152,18 +133,8 @@ class ShipDetection(data.Dataset):
             img = img[:, :, (2, 1, 0)]
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
-        
-        # import pdb;pdb.set_trace()
-        # print(img.shape,type(img),target,type(target))
         return torch.from_numpy(img).permute(2, 0, 1), target, height, width
-       
-    def pull_noobj_item(self,index):
-        img_id = self.ids[index]
-        img = cv2.imread(self._imgpath % img_id)
-        height, width, channels = img.shape
-        target=np.zeros((1,5)).astype(float)
-        return  torch.from_numpy(self.basetransform(img)[0]).permute(2, 0, 1),target,height, width
-
+        # return torch.from_numpy(img), target, height, width
 
     def pull_image(self, index):
         '''Returns the original image object at index in PIL form

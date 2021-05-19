@@ -1,0 +1,6 @@
+weights path :weights/ssd512_CutShip512_30040000.pth
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.3401679841897233
+MaxRecall:0.3813559322033898 
+MinPrecision: 0.5555555555555556

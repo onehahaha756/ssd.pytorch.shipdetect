@@ -1,0 +1,207 @@
+***************
+weights path :weights/ssd512_MixCutShip512_300_8000.pth
+loss :6.165677070617676
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.0005699629524080935
+MaxRecall:0.13934426229508196 
+MinPrecision: 0.0024612711741711308
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_8000.pth
+loss :5.210687637329102
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.0016787446891855246
+MaxRecall:0.22131147540983606 
+MinPrecision: 0.002978488692774407
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_10000.pth
+loss :1.5738780498504639
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.6769293844177804
+MaxRecall:0.8032786885245902 
+MinPrecision: 0.020361520880947434
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_12000.pth
+loss :1.0698542594909668
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7244398321880687
+MaxRecall:0.8114754098360656 
+MinPrecision: 0.047142857142857146
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_14000.pth
+loss :0.5012862086296082
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7458860111120486
+MaxRecall:0.819672131147541 
+MinPrecision: 0.1264222503160556
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_16000.pth
+loss :0.5042412877082825
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7914941956366126
+MaxRecall:0.8524590163934426 
+MinPrecision: 0.2153209109730849
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_18000.pth
+loss :0.3410596251487732
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7858126721763086
+MaxRecall:0.8360655737704918 
+MinPrecision: 0.3008849557522124
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_20000.pth
+loss :0.35047537088394165
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.779586097233924
+MaxRecall:0.8360655737704918 
+MinPrecision: 0.38783269961977185
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_22000.pth
+loss :0.2999695837497711
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7252298263534219
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.5
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_24000.pth
+loss :0.3784370720386505
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7847507331378301
+MaxRecall:0.8032786885245902 
+MinPrecision: 0.6012269938650306
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_24000.pth
+loss :0.1658085435628891
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7843822843822845
+MaxRecall:0.8032786885245902 
+MinPrecision: 0.6012269938650306
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_26000.pth
+loss :0.20122571289539337
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7272727272727274
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.6217948717948718
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_28000.pth
+loss :0.12172731757164001
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.801044932079415
+MaxRecall:0.8032786885245902 
+MinPrecision: 0.7050359712230215
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_30000.pth
+loss :0.11214952915906906
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.808537257135388
+MaxRecall:0.8114754098360656 
+MinPrecision: 0.8608695652173913
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_30000.pth
+loss :0.11964593827724457
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.808719377684895
+MaxRecall:0.8114754098360656 
+MinPrecision: 0.868421052631579
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_32000.pth
+loss :0.23635829985141754
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.8053893814763382
+MaxRecall:0.8114754098360656 
+MinPrecision: 0.8608695652173913
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_34000.pth
+loss :0.08783145248889923
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7243401759530793
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.8899082568807339
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_36000.pth
+loss :0.2477894127368927
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7242083758937693
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.9065420560747663
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_38000.pth
+loss :0.11090078204870224
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7235238987816308
+MaxRecall:0.7868852459016393 
+MinPrecision: 0.9056603773584906
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_40000.pth
+loss :0.12218041718006134
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7221664865977261
+MaxRecall:0.7868852459016393 
+MinPrecision: 0.897196261682243
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_42000.pth
+loss :0.06019100919365883
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7234449760765551
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.9065420560747663
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_44000.pth
+loss :0.06050632894039154
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.7234042553191491
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.9065420560747663
+
+***************
+weights path :weights/ssd512_MixCutShip512_300_46000.pth
+loss :0.051179759204387665
+iou overthre:0.5
+Confidence thre:0.1
+AP:0.72336265884653
+MaxRecall:0.7950819672131147 
+MinPrecision: 0.9065420560747663
+

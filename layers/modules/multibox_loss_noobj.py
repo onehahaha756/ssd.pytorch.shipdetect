@@ -7,7 +7,7 @@ from data import gfplane as cfg
 from ..box_utils import match, log_sum_exp
 
 
-class MultiBoxLoss(nn.Module):
+class MultiBoxLoss_noobj(nn.Module):
     """SSD Weighted Loss Function
     Compute Targets:
         1) Produce Confidence Target Indices by matching  ground truth boxes
@@ -33,7 +33,7 @@ class MultiBoxLoss(nn.Module):
     def __init__(self, num_classes, overlap_thresh, prior_for_matching,
                  bkg_label, neg_mining, neg_pos, neg_overlap, encode_target,
                  use_gpu=True):
-        super(MultiBoxLoss, self).__init__()
+        super(MultiBoxLoss_noobj, self).__init__()
         self.use_gpu = use_gpu
         self.num_classes = num_classes
         self.threshold = overlap_thresh
@@ -70,6 +70,7 @@ class MultiBoxLoss(nn.Module):
         conf_t = torch.LongTensor(num, num_priors)
         for idx in range(num):
             truths = targets[idx][:, :-1].data
+            import pdb;pdb.set_trace()
             labels = targets[idx][:, -1].data
             defaults = priors.data
             match(self.threshold, truths, defaults, self.variance, labels,

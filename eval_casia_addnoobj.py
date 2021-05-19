@@ -3,8 +3,7 @@ import os,glob,pickle
 import os.path as osp
 from typing import cast
 import numpy as np
-from nms import nms
-import matplotlib.pyplot as plt 
+
 GTCLASS=['ship'] #only one class
 
 
@@ -145,7 +144,7 @@ def voc_ap(rec, prec, use_07_metric=True):
     return ap
 
 
-def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5,conf_thre=0.3,nms_thre=0.5,use_07_metric=True):
+def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5,conf_thre=0.3,use_07_metric=True):
     '''
     this is single class ap caculate code,for 
     annot_dir:txt format annot_dir,txt format is:
@@ -197,7 +196,6 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
         if not imagename in det_dict.keys():
             continue
         dets=det_dict[imagename]
-        dets=nms(dets,nms_thre,conf_thre)
         for det in dets:
             #import pdb;pdb.set_trace()
             if det[-1]==GTCLASS.index(classname):
@@ -271,9 +269,6 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
         rec = tp / float(GtNmus)
         ap=voc_ap(rec, prec, use_07_metric)
 
-
-  
-        #import pdb;pdb.set_trace()
         print('*'*15)
         #print('save path : {} ')
         #print('weights path :{}\n'.format(args.trained_model))
@@ -316,9 +311,7 @@ if __name__=='__main__':
                         help='evalution iou thre ')
     parser.add_argument('--conf_thre', default=0.3, type=float,
                         help='Detection confidence threshold')
-    parser.add_argument('--nms_thre', default=0.5, type=float,
-                         help='evalution iou thre ')
-    
+
 
 
     args = parser.parse_args()

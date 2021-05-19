@@ -1,8 +1,8 @@
 from data import *
 from utils.augmentations import GFPlaneAugmentation
-from layers.modules import MultiBoxLoss
+from layers.modules import MultiBoxLoss,MultiBoxLoss_noobj
 from ssd import build_ssd
-import os
+import os,glob
 import sys
 import time
 import torch
@@ -14,8 +14,9 @@ import torch.nn.init as init
 import torch.utils.data as data
 import numpy as np
 import argparse
-
-
+from eval_casia import casia_eval
+from inference_remote import infer_bigpic,eval_results
+import matplotlib.pyplot as plt
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
@@ -23,7 +24,7 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
-parser.add_argument('--dataset', default='CasiaShip', choices=['CasiaShip','GFPlane','VOC', 'COCO','SSDD'],
+parser.add_argument('--dataset', default='CasiaShip', choices=['BigShip','CasiaShip','GFPlane','VOC', 'COCO','SSDD'],
                     type=str, help='VOC or COCO')
 parser.add_argument('--dataset_root', default=Ship_ROOT,
                     help='Dataset root directory path')
@@ -51,7 +52,54 @@ parser.add_argument('--visdom', default=False, type=str2bool,
                     help='Use visdom for loss visualization')
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
+#import pdb;pdb.set_trace()
 args = parser.parse_args()
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+def test_online(weight_path,cfg,loss,eval='cut'):
+    test_test= build_ssd('test',cfg, cfg['min_dim'], cfg['num_classes'])
+    test_test.load_state_dict(torch.load(weight_path))
+    test_test.cuda()
+    test_test.eval()
+    overthre=0.5
+    conf_thre=0.1
+    nms_thre=0.5
+    #weight_path.split('_')[-1]
+    #import pdb;pdb.set_trace()
+    detpath='eval/detections.pkl'
+    visdir='eval'
+    save_ap_fig=os.path.join(visdir,'AP_mix.png')
+    try:
+        logfile=open('logs/trainlog_mix.txt','a',encoding='utf-8')
+    except:
+        logfile=open('logs/trainlog_mix.txt','w',encoding='utf-8')
+    if eval=='cut':
+        imgsetfile='/data/03_Datasets/CasiaDatasets/CutShip512_300/test.txt'
+        testdir='/data/03_Datasets/CasiaDatasets/CutShip512_300/image/test'
+        annot_dir='/data/03_Datasets/CasiaDatasets/CutShip512_300/labelDota'
+        annot_type='rect'
+        imglist=glob.glob(os.path.join(testdir,'*jpg'))
+    else:
+        imgsetfile='/data/03_Datasets/CasiaDatasets/CutShip512_300/origin_test.txt'
+        testdir='/data/03_Datasets/CasiaDatasets/ship/image/'
+        annot_dir='/data/03_Datasets/CasiaDatasets/ship/labelDota'
+        annot_type='polygon'   
+        imgnames=open(imgsetfile,'r')     
+        #import pdb;pdb.set_trace()
+        imglist=[os.path.join(testdir,'{}.jpg'.format(x.strip())) for x in imgnames.readlines()]
+    test_test.eval()
+    infer_bigpic(detpath,visdir,test_test,imglist,cfg['min_dim'],0.5,save_results=False)
+    #eval_results(annot_dir,annot_type,detpath,imgsetfile,'ship',0.5,0.1,0.5)
+    rec,prec,ap=casia_eval(annot_dir,annot_type,detpath,imgsetfile,'ship',overthre,conf_thre,nms_thre)
+    plt.plot(rec,prec,label=weight_path.split('_')[-1])
+    plt.xlabel('recall');plt.ylabel('presicion')
+    plt.legend()
+    plt.savefig(save_ap_fig)
+    logfile.write('time {}\n'.format(time.asctime(time.localtime())))
+    logfile.write('*'*15+'\nweights path :{}\n'.format(weight_path))
+    logfile.write('loss :{}\n'.format(loss.data.detach()))
+    logfile.write('iou overthre:{}\nConfidence thre:{}\nAP:{}\nMaxRecall:{} \nMinPrecision: {}\n\n'\
+                    .format(overthre,conf_thre,ap,rec[-1],prec[-1]))
+    logfile.close()
 
 
 
@@ -70,7 +118,8 @@ if not os.path.exists(args.save_folder):
 
 
 def train():
-    #os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+    #
+    #torch.cuda.set_device(1)
     if args.dataset == 'COCO':
         if args.dataset_root == VOC_ROOT:
             if not os.path.exists(COCO_ROOT):
@@ -107,11 +156,19 @@ def train():
         dataset = ShipDetection(root=args.dataset_root,split='train',
                                transform=GFPlaneAugmentation(cfg['min_dim'],
                                                          MEANS))
+    elif args.dataset == 'BigShip':
+        print('root is Bigship')
+        cfg=casiaBigship
+        dataset = BigShipDetection(root=args.dataset_root,split='train',
+                                    transform=GFPlaneAugmentation(cfg['min_dim'],MEANS))
+
     if args.visdom:
         import visdom
         viz = visdom.Visdom()
 
     ssd_net = build_ssd('train',cfg, cfg['min_dim'], cfg['num_classes'])
+    
+    #ssd_net = build_ssd('train',cfg, cfg['min_dim'], cfg['num_classes'])
     #import pdb;pdb.set_trace()
     net = ssd_net
 
@@ -140,7 +197,7 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    criterion = MultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
+    criterion = MultiBoxLoss_noobj(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
                              False, args.cuda)
 
     net.train()
@@ -200,6 +257,7 @@ def train():
         else:
             images = Variable(images)
             targets = [Variable(ann, volatile=True) for ann in targets]
+        import pdb;pdb.set_trace()
         # forward
         t0 = time.time()
         out = net(images)
@@ -217,7 +275,7 @@ def train():
         conf_loss += loss_c.item()
         #print('iter ' + repr(iteration) + ' || Loss: %.4f ||' %(loss.item())+\
         #    ' || Loss_l: %.4f' %(loss_l.item())+' || Loss_c: %.4f'%(loss_c.item()))
-        if iteration % 1 == 0:
+        if iteration % 100 == 0:
             print('timer: %.4f sec.' % (t1 - t0))
             print('epoch: %d || '%(epoch),' iter ' + repr(iteration) + ' || Loss: %.4f ||' %(loss.item())+\
             ' || Loss_l: %.4f' %(loss_l.item())+' || Loss_c: %.4f'%(loss_c.item()), end=' ')
@@ -228,8 +286,11 @@ def train():
 
         if iteration != 0 and iteration % 2000 == 0:
             print('Saving state, iter:', iteration)
-            torch.save(ssd_net.state_dict(), 'weights/ssd512_MixShip512_100' +
-                       repr(iteration) + '.pth')
+            save_path='weights/ssd512_MixCutShip512_300_noobj'+repr(iteration) + '.pth'
+            torch.save(ssd_net.state_dict(), save_path)
+            
+            test_online(save_path,cfg,loss,'cut')
+
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')
 

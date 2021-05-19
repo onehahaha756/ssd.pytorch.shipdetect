@@ -164,10 +164,6 @@ class COCODetection(data.Dataset):
         Return:
             list:  [img_id, [(label, bbox coords),...]]
                 eg: ('001718', [('dog', (96, 13, 438, 332))]
-r
-r
-pg
-r
         '''
         img_id = self.ids[index]
         ann_ids = self.coco.getAnnIds(imgIds=img_id)
