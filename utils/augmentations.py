@@ -63,6 +63,15 @@ class Lambda(object):
     def __call__(self, img, boxes=None, labels=None):
         return self.lambd(img, boxes, labels)
 
+class ColorToGray(object):
+    def __call__(self,image,boxes=None,labels=None):
+        Grayimg=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        #add last dim
+        img=np.expand_dims(Grayimg,axis=2)
+        #concat to 3 channel
+        Grayimg3=np.concatenate((img,img,img),axis=-1)
+
+        return Grayimg3,boxes,labels
 
 class ConvertFromInts(object):
     def __call__(self, image, boxes=None, labels=None):
@@ -402,6 +411,7 @@ class GFPlaneAugmentation(object):
         self.mean = mean
         self.size = size
         self.augment = Compose([
+            ColorToGray(),
             ConvertFromInts(),
             ToAbsoluteCoords(),
             PhotometricDistort(),

@@ -21,7 +21,9 @@ else:
 Ship_CLASSES = (["ship"])
 
 # note: if you used our download scripts, this should be right
-Ship_ROOT = '/data/03_Datasets/CasiaDatasets/CutMixShip512_300_noobj'
+# Ship_ROOT = '/data/03_Datasets/CasiaDatasets/CutMixShip512_300_noobj'
+# Ship_ROOT = '/data/03_Datasets/CasiaDatasets/CutMixShip512_300'
+Ship_ROOT = '/data/03_Datasets/airbus-ship-detection/airbus_ship_detection512'
 
 #import pdb;pdb.set_trace()
 
@@ -112,8 +114,8 @@ class ShipDetection(data.Dataset):
         self.basetransform=BaseTransform(512,MEANS)
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = osp.join('%s','labelDota', '%s.txt')
-        self._imgpath = osp.join('%s', 'image',split,'%s.jpg')
+        self._annopath = osp.join('%s','label', '%s.txt')
+        self._imgpath = osp.join('%s', 'image','%s.jpg')
         self.ids = list()
         rootpath = self.root
         self.image_indexes=[]
@@ -134,12 +136,13 @@ class ShipDetection(data.Dataset):
 
     def pull_item(self, index):
         img_id = self.ids[index]
+        #return self.pull_noobj_item(index)
         if not os.path.exists(self._annopath % img_id):
             return self.pull_noobj_item(index)
         target = open(self._annopath % img_id)
         img = cv2.imread(self._imgpath % img_id)
 
-        #print(self._imgpath % img_id)
+        # print(self._imgpath % img_id)
         height, width, channels = img.shape
 
         if self.target_transform is not None:
@@ -153,16 +156,27 @@ class ShipDetection(data.Dataset):
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
         
-        # import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         # print(img.shape,type(img),target,type(target))
+
         return torch.from_numpy(img).permute(2, 0, 1), target, height, width
        
     def pull_noobj_item(self,index):
         img_id = self.ids[index]
+       # import pdb;pdb.set_trace()
         img = cv2.imread(self._imgpath % img_id)
+        img=img.astype(np.float32)
+        mean=np.array(MEANS).astype(np.float32)
+        img-=mean
+        #import pdb;pdb.set_trace()
+        img=img.astype(np.float32)
+        img = img[:, :, (2, 1, 0)]
+        #import pdb;pdb.set_trace()
+        
         height, width, channels = img.shape
-        target=np.zeros((1,5)).astype(float)
-        return  torch.from_numpy(self.basetransform(img)[0]).permute(2, 0, 1),target,height, width
+        target=np.array([[0]*5])
+
+        return  torch.from_numpy(img).permute(2, 0, 1),target,height, width
 
 
     def pull_image(self, index):

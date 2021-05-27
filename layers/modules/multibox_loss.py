@@ -69,6 +69,7 @@ class MultiBoxLoss(nn.Module):
         loc_t = torch.Tensor(num, num_priors, 4)
         conf_t = torch.LongTensor(num, num_priors)
         for idx in range(num):
+            
             truths = targets[idx][:, :-1].data
             labels = targets[idx][:, -1].data
             defaults = priors.data
@@ -102,7 +103,7 @@ class MultiBoxLoss(nn.Module):
         # Hard Negative Mining
         # modyfied by ydp
         #pos=pos.view(-1,1)
-
+        #import pdb;pdb.set_trace()
         loss_c = loss_c.view(num, -1)
         loss_c[pos] = 0  # filter out pos boxes for now
         loss_c = loss_c.view(num, -1)

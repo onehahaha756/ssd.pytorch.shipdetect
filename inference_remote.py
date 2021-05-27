@@ -34,6 +34,8 @@ if sys.version_info[0] == 2:
 else:
     import xml.etree.ElementTree as ET
 
+multitype=['.jpg','.tif']
+multitype=['.jpg']
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -69,6 +71,7 @@ def draw_clsdet(img,cls_dets,vis_thresh):
     return :
     show_img: image with rectangle labels
     '''
+    # import pdb;pdb.set_trace()
     for i in range(len(cls_dets)):
         
         bbox=[int(x) for x in cls_dets[i][:-2]]
@@ -78,9 +81,10 @@ def draw_clsdet(img,cls_dets,vis_thresh):
         if score>vis_thresh:
             cv2.rectangle(img,(x1,y1),(x2,y2),(0,255,0),2,2)
             cv2.putText(img,str(score)[:5],(x1,y1),2,cv2.FONT_HERSHEY_PLAIN,(0,255,0),3)
+    
     #return show_img
 
-def infer_bigpic(det_file,vis_dir, net, imglist,transform,im_size,nms_thre,overlap=300,thresh=0.05,save_results=True):
+def infer_bigpic(det_file,vis_dir, net, imglist,im_size,nms_thre,overlap=256,thresh=0.05,save_results=True,transform=BaseTransform(512,MEANS)):
 
     det_results={}
     w,h=im_size,im_size
@@ -195,6 +199,9 @@ def eval_results(annot_dir,annot_type,det_path,imagesetfile,clss,overthre,conf_t
     results_path=osp.join(det_dir,'results.txt')
     save_ap_fig=osp.join(det_dir,'AP.png')
     plt.plot(rec,prec)
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+
     plt.xlabel('recall');plt.ylabel('presicion')
     plt.savefig(save_ap_fig)
 
@@ -206,7 +213,7 @@ def eval_results(annot_dir,annot_type,det_path,imagesetfile,clss,overthre,conf_t
 
 
 
-def get_infer_imagelist(imagedir,test_txt=None,imgtype='.jpg'):
+def get_infer_imagelist(imagedir,test_txt=None,multiimgtype=multitype):
     '''
     return whole image list or subimage list from test_txt
     '''
@@ -216,15 +223,18 @@ def get_infer_imagelist(imagedir,test_txt=None,imgtype='.jpg'):
         with open(test_txt,'r') as f:
             for imagename in f.readlines():
                 imagename=imagename.strip()
-                imgpath=osp.join(imagedir,imagename+imgtype)
-                imglist.append(imgpath)
+                for imgtype in multiimgtype:
+                    imgpath=osp.join(imagedir,imagename+imgtype)
+                    if os.path.exists(imgpath):
+                        imglist.append(imgpath)
     else:
-        imglist=glob.glob(osp.join(imagedir,'*'+imgtype))
+        for imgtype in multiimgtype:
+            imglist+=glob.glob(osp.join(imagedir,'*'+imgtype))
     
     return imglist
 if __name__ == '__main__':
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     parser = argparse.ArgumentParser(
         description='Single Shot MultiBox Detector Evaluation')
     parser.add_argument('--trained_model',
@@ -274,10 +284,11 @@ if __name__ == '__main__':
         cudnn.benchmark = True
     #imagesetdir
     imagedir=os.path.join(args.data_dir,'image')
-    annotdir=os.path.join(args.data_dir,'labelDota')
+    # imagedir=args.data_dir
+    annotdir=os.path.join(args.data_dir,'label')
 
     imglist=get_infer_imagelist(imagedir,args.test_images)
-    #import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
     #genarate savefolder
     det_path,imagenames,vis_dir=mksavetree(args.save_folder)
     #write test imglist
@@ -285,6 +296,6 @@ if __name__ == '__main__':
     write_infer_imagenames(imglist,imagenames)
     if not args.re_evaluate:
         #shutil.rmtree(args.save_folder)
-        infer_bigpic(det_path, vis_dir,net, imglist,transform,cfg['min_dim'],args.nms_thre,thresh=args.conf_thre)
+        infer_bigpic(det_path, vis_dir,net, imglist,cfg['min_dim'],args.nms_thre,thresh=args.conf_thre)
     
     eval_results(annotdir,args.annot_type,det_path,imagenames,cfg['classname'],args.iou_thre,args.conf_thre,args.nms_thre)

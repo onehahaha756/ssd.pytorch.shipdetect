@@ -73,7 +73,7 @@ gfplane={
 casiaship={
     'num_classes': 2,
     'lr_steps': (40000, 50000, 60000),
-    'max_iter': 60000,
+    'max_iter': 400000,
     'feature_maps': [64, 32, 16, 8, 6, 4],
     'min_dim': 512,
     'steps': [8, 16, 32, 64, 100, 300],
@@ -90,7 +90,7 @@ casiaship={
 casiaBigship={
     'num_classes': 2,
     'lr_steps': (40000, 50000, 60000),
-    'max_iter': 60000,
+    'max_iter': 100000,
     'feature_maps': [512, 256, 128, 64, 6, 4],
     'min_dim': 4096,
     'steps': [8, 16, 32, 64, 100, 300],

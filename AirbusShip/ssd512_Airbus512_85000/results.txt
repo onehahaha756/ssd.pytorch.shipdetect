@@ -1,0 +1,7 @@
+weights path :weights/ssd512_Airbus512_85000.pth
+iou overthre:0.5
+Confidence thre:0.3
+nms thresh:0.3
+AP:0.5121991225174978
+MaxRecall:0.5054584256751211 
+MinPrecision: 0.7566040054060695

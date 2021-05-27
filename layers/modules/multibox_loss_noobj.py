@@ -29,10 +29,11 @@ class MultiBoxLoss_noobj(nn.Module):
             N: number of matched default boxes
         See: https://arxiv.org/pdf/1512.02325.pdf for more details.
     """
-
+#MultiBoxLoss_noobj(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
+                             #False, args.cuda)
     def __init__(self, num_classes, overlap_thresh, prior_for_matching,
                  bkg_label, neg_mining, neg_pos, neg_overlap, encode_target,
-                 use_gpu=True):
+                 min_neg_num=20,use_gpu=True):
         super(MultiBoxLoss_noobj, self).__init__()
         self.use_gpu = use_gpu
         self.num_classes = num_classes
@@ -42,6 +43,7 @@ class MultiBoxLoss_noobj(nn.Module):
         self.use_prior_for_matching = prior_for_matching
         self.do_neg_mining = neg_mining
         self.negpos_ratio = neg_pos
+        self.min_neg_num=min_neg_num
         self.neg_overlap = neg_overlap
         self.variance = cfg['variance']
 
@@ -68,9 +70,16 @@ class MultiBoxLoss_noobj(nn.Module):
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
         conf_t = torch.LongTensor(num, num_priors)
+       # import pdb;pdb.set_trace() 
         for idx in range(num):
             truths = targets[idx][:, :-1].data
-            import pdb;pdb.set_trace()
+            #nagtive samples with no object
+            if truths.sum()==0:
+                #import pdb;pdb.set_trace()
+                conf_t[idx][:]=0
+                loc_t[idx][:]=0
+                continue
+            #import pdb;pdb.set_trace()
             labels = targets[idx][:, -1].data
             defaults = priors.data
             match(self.threshold, truths, defaults, self.variance, labels,
@@ -83,21 +92,22 @@ class MultiBoxLoss_noobj(nn.Module):
         conf_t = Variable(conf_t, requires_grad=False)
 
         pos = conf_t > 0
-        num_pos = pos.sum(dim=1, keepdim=True)
-        #print(num_pos)
-        # Localization Loss (Smooth L1)
-        # Shape: [batch,num_priors,4]
-        #import pdb;pdb.set_trace()
-        #print(loc_data)
-        pos_idx = pos.unsqueeze(pos.dim()).expand_as(loc_data)
-        loc_p = loc_data[pos_idx].view(-1, 4)
-        loc_t = loc_t[pos_idx].view(-1, 4)
-        loss_l = F.smooth_l1_loss(loc_p, loc_t, size_average=False)
         
-        #print('loc_l',loss_l)
+        num_pos = pos.sum(dim=1, keepdim=True)
+        if num_pos.data.sum()>0:
+            # Localization Loss (Smooth L1)
+            # Shape: [batch,num_priors,4]
+            pos_idx = pos.unsqueeze(pos.dim()).expand_as(loc_data)
+            loc_p = loc_data[pos_idx].view(-1, 4)
+            loc_t = loc_t[pos_idx].view(-1, 4)
+            loss_l = F.smooth_l1_loss(loc_p, loc_t, size_average=False)
+        else:
+            #import pdb;pdb.set_trace()
+            loss_l=torch.tensor(0.).cuda()
+        #import pdb;pdb.set_trace()   
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
-        #import pdb;pdb.set_trace()
+  
         loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
         #print('loss_c',loss_c)
         # Hard Negative Mining
@@ -105,16 +115,19 @@ class MultiBoxLoss_noobj(nn.Module):
         #pos=pos.view(-1,1)
 
         loss_c = loss_c.view(num, -1)
-        loss_c[pos] = 0  # filter out pos boxes for now
+        #import pdb;pdb.set_trace()
+        if num_pos.data.sum()>0:
+            loss_c[pos] = 0  # filter out pos boxes for now
         loss_c = loss_c.view(num, -1)
         _, loss_idx = loss_c.sort(1, descending=True)
         _, idx_rank = loss_idx.sort(1)
         #import pdb;pdb.set_trace()
         num_pos = pos.long().sum(1, keepdim=True)
-        num_neg = torch.clamp(self.negpos_ratio*num_pos, max=pos.size(1)-1)
+        #get num_pos*negpos_ratio max neg loss
+        num_neg = torch.clamp(self.negpos_ratio*num_pos, min=self.min_neg_num,max=pos.size(1)-1).long()
+        
         neg = idx_rank < num_neg.expand_as(idx_rank)
         
-        #import pdb;pdb.set_trace()
         # Confidence Loss Including Positive and Negative Examples
         pos_idx = pos.unsqueeze(2).expand_as(conf_data)
         neg_idx = neg.unsqueeze(2).expand_as(conf_data)
@@ -124,11 +137,11 @@ class MultiBoxLoss_noobj(nn.Module):
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N
         #print(loss_l,loss_c)
-        N = num_pos.data.sum()
+        #import pdb;pdb.set_trace()
+        N = num_pos.data.sum()+num_neg.data.sum()
+        #print('N: ',N)
+        loss_l=loss_l
         loss_l /= N
         loss_c /= N
-        #if not loss_l<100:
-        #    import pdb;pdb.set_trace()
-        #if loss_l== nan or loss_c==nan:
-            #import pdb;pdb.set_trace()
+
         return loss_l, loss_c

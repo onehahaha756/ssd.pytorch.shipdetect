@@ -80,6 +80,7 @@ def LoadTxtGt(annot_dir,txttype='polygon'):
     gt_dict={}
     for annot_path in annot_list:
         basename=osp.splitext(osp.basename(annot_path))[0]
+        # import pdb;pdb.set_trace()
         if txttype=='polygon':
             polygon_list=DotaTxt2polygons(annot_path)
             rect_list=polygons2rect(polygon_list)
@@ -88,7 +89,7 @@ def LoadTxtGt(annot_dir,txttype='polygon'):
         else:
             print('erro! unrecognised annot type')
         gt_dict[basename]=rect_list
-    assert len(gt_dict.keys())!=0,'ground truth object is 0,please check your annotation directory!'
+    #assert len(gt_dict.keys())!=0,'ground truth object is 0,please check your annotation directory!'
     return gt_dict
 def LoadTxtGt_rect(annot_dir):
     '''
@@ -168,6 +169,7 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
     '''
     gt_dict=LoadTxtGt(annot_dir,annot_type)
     det_dict=LoadDetfile(det_path)
+    import pdb;pdb.set_trace()
     
     with open(imagesetfile, 'r') as f:
         lines = f.readlines()
@@ -176,9 +178,10 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
     cls_gt={} 
     #select groud truth of this cls 
     GtNmus=0
+    #import pdb;pdb.set_trace()
     for imagename in imagenames:
         if not imagename in gt_dict.keys():
-            gt_dict[imagename]=[]
+            cls_gt[imagename]=[]
             continue
         gts=gt_dict[imagename]
         cls_bboxes=[]
@@ -229,7 +232,7 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
         nd = len(BBox)
         tp = np.zeros(nd)
         fp = np.zeros(nd)
-
+        print('cofidence thre: {}\ntotal predicted bbox : {}'.format(conf_thre,len(BBox)))
         for d in range(nd):
             #import pdb;pdb.set_trace()
             '''
@@ -275,7 +278,8 @@ def casia_eval(annot_dir,annot_type,det_path,imagesetfile,classname,ovthresh=0.5
         prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
         rec = tp / float(GtNmus)
         ap=voc_ap(rec, prec, use_07_metric)
-
+        #FP=np.sum(fp)
+        #print('false positive object nums {}'.format(FP))
 
   
         #import pdb;pdb.set_trace()

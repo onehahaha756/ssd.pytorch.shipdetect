@@ -5,9 +5,16 @@ __pycache__/
 
 # C extensions
 *.so
-#results
+#datasets and results
 *.jpg
 *.pkl
+*.tif
+*.tiff
+*.png
+JLSea/
+AirBusShip/
+logs/
+eval/
 MixShip/
 Ship/
 CutShip/
